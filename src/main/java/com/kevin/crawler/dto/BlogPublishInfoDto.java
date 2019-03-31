@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 /**
  * 类名: BlogPublishInfoDto<br/>
- * 包名：com.kevin.crawler.dto<br/>
+ * 包名：com.kevin.crawler.dto<br/
  * 作者：kevin<br/>
  * 时间：2019/2/26 10:30<br/>
  * 版本：1.0<br/>

@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 import static com.kevin.common.util.DateTimeUtil.DateTimeFormat.LONG_DATE_TIME_PATTERN_WITH_LINE_TO_HOUR;
 import static com.kevin.crawler.constant.BizStatusCode.READ_OR_CONNECT_ERROR;
-import static com.kevin.crawler.constant.BizStatusCode.codeMsgMap;
+import static com.kevin.crawler.constant.BizStatusCode.bizStatusCodeMap;
 
 /**
  * @类名: OneHourCrawlerTask<br />
@@ -79,7 +79,7 @@ public class OneHourCrawlerTask implements Runnable {
             try {
                 doc = Jsoup.connect(url).userAgent(userAgent).timeout(20000).get();
             } catch (IOException e) {
-                throw new BizException(e, READ_OR_CONNECT_ERROR, codeMsgMap.get(READ_OR_CONNECT_ERROR));
+                throw new BizException(e, READ_OR_CONNECT_ERROR, bizStatusCodeMap.get(READ_OR_CONNECT_ERROR));
             }
             Element feedList = doc.getElementById("pl_feedlist_index");
             Element noResultCard = feedList.getElementsByClass("card-no-result").first();

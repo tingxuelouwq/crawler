@@ -97,7 +97,7 @@ public class CrawlerApplicationTests {
             bos = new BufferedOutputStream(fos);
             workbook.write(bos);
         } catch (IOException e) {
-            throw new BizException(e, SAVE_TO_DISK_FAILED, codeMsgMap.get(SAVE_TO_DISK_FAILED));
+            throw new BizException(e, SAVE_TO_DISK_FAILED, bizStatusCodeMap.get(SAVE_TO_DISK_FAILED));
         } finally {
             try {
                 workbook.close();
@@ -108,7 +108,7 @@ public class CrawlerApplicationTests {
                     bos.close();
                 }
             } catch (IOException e) {
-                throw new BizException(e, OUTPUTSTREAM_CLOSED_ERROR, codeMsgMap.get(OUTPUTSTREAM_CLOSED_ERROR));
+                throw new BizException(e, OUTPUTSTREAM_CLOSED_ERROR, bizStatusCodeMap.get(OUTPUTSTREAM_CLOSED_ERROR));
             }
         }
     }
@@ -144,7 +144,7 @@ public class CrawlerApplicationTests {
                     Integer.parseInt(dateTimePart[1]), Integer.parseInt(dateTimePart[2]),
                     Integer.parseInt(dateTimePart[3]), 0);
         } catch (Exception e) {
-            throw new BizException(DATE_FORMAT_ERROR, codeMsgMap.get(DATE_FORMAT_ERROR));
+            throw new BizException(DATE_FORMAT_ERROR, bizStatusCodeMap.get(DATE_FORMAT_ERROR));
         }
     }
 
