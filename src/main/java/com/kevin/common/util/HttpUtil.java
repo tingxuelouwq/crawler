@@ -148,6 +148,44 @@ public class HttpUtil {
         return httpClient;
     }
 
+
+    /**
+     * GET请求，针对文本
+     * @param url
+     * @return
+     */
+    public static String get(String url, Map<String, String> headers) {
+        log.info(GET_START);
+        log.info(GET, url);
+        if (StringUtil.isEmpty(url)) {
+            log.error(GET_URL_ILLEGAL);
+            return null;
+        }
+
+        CloseableHttpClient httpClient = getHttpClient();
+        HttpGet httpGet =new HttpGet(url);
+        CloseableHttpResponse response = null;
+        String respContent = null;
+        try {
+            // 设置请求头
+            for (Map.Entry<String, String> header : headers.entrySet()) {
+                httpGet.addHeader(header.getKey(), header.getValue());
+            }
+            // 执行GET请求
+            response = httpClient.execute(httpGet);
+            // 获取响应内容
+            respContent = getRespContent(response, "GET");
+        } catch (IOException e) {
+            log.error(GET_ERROR, e);
+        } finally {
+            httpGet.releaseConnection();
+        }
+
+        log.info(GET_END);
+        return respContent;
+    }
+
+
     /**
      * GET请求，针对文本
      * @param url

@@ -7,20 +7,19 @@ import lombok.Setter;
 import java.io.Serializable;
 
 /**
- * 类名: TCWDto<br/>
+ * 类名: SPDto<br/>
  * 包名：com.kevin.cookie.dto<br/>
  * 作者：kevin<br/>
- * 时间：2019/3/31 23:11<br/>
+ * 时间：2019/3/31 23:57<br/>
  * 版本：1.0<br/>
  * 描述：
  */
 @Getter
 @Setter
 @AllArgsConstructor
-public class TCWDto implements Serializable {
-    private static final long serialVersionUID = 8714547104174255516L;
+public class SPDto implements Serializable {
 
-    private String tid;
-    private String where;
-    private String confidence;
+    private static final long serialVersionUID = 6207238702655161559L;
+    private String sub;
+    private String subp;
 }
