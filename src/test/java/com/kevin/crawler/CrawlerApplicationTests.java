@@ -60,13 +60,12 @@ public class CrawlerApplicationTests {
         wrapperTitleAndHead(workbook, sheet, title, heads);
 
         AtomicInteger rowNum = new AtomicInteger(2);
-        final String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36";
         while (start.compareTo(end) < 0) {
             tmp = start.plusHours(1);
             if (tmp.compareTo(end) > 0) {
                 tmp = end;
             }
-            tasks.add(new OneHourCrawlerTask(keywords, start, tmp, userAgent, sheet, rowNum));
+            tasks.add(new OneHourCrawlerTask(keywords, start, tmp, sheet, rowNum));
             start = start.plusHours(1);
         }
 

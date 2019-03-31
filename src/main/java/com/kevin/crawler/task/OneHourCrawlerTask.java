@@ -32,19 +32,18 @@ import static com.kevin.crawler.constant.BizStatusCode.codeMsgMap;
  */
 public class OneHourCrawlerTask implements Runnable {
 
+    private final String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36";
     private String keywords;
     private LocalDateTime start;
     private LocalDateTime end;
-    private String userAgent;
     private Sheet sheet;
     private AtomicInteger rowNum;
     private CountDownLatch latch;
 
-    public OneHourCrawlerTask(String keywords, LocalDateTime start, LocalDateTime end, String userAgent, Sheet sheet, AtomicInteger rowNum) {
+    public OneHourCrawlerTask(String keywords, LocalDateTime start, LocalDateTime end, Sheet sheet, AtomicInteger rowNum) {
         this.keywords = keywords;
         this.start = start;
         this.end = end;
-        this.userAgent = userAgent;
         this.sheet = sheet;
         this.rowNum = rowNum;
     }
@@ -56,7 +55,7 @@ public class OneHourCrawlerTask implements Runnable {
     @Override
     public void run() {
         try {
-            crawl(keywords, start, end, userAgent, sheet, rowNum);
+            crawl(keywords, start, end, sheet, rowNum);
         } catch (BizException e) {
             e.printStackTrace();
         } finally {
@@ -64,7 +63,7 @@ public class OneHourCrawlerTask implements Runnable {
         }
     }
 
-    private void crawl(String keywords, LocalDateTime start, LocalDateTime end, String userAgent, Sheet sheet, AtomicInteger rowNum) throws BizException {
+    public void crawl(String keywords, LocalDateTime start, LocalDateTime end, Sheet sheet, AtomicInteger rowNum) throws BizException {
         int pageNum = 1;
         int totalPageNum = Integer.MAX_VALUE;
         while (pageNum <= totalPageNum) {
@@ -133,13 +132,15 @@ public class OneHourCrawlerTask implements Runnable {
         ForwardedBlogDto forwardedBlog = null;
         if (cardComment != null) {
             forwardedBloggerInfo = extractBloggerInfo(cardComment);
-            forwardedBlogText = extractBlogText(cardComment);
-            forwardedBlogPublishInfo = extractPublishInfo(cardComment);
-            Element cardCommentAct = cardComment.getElementsByClass("act s-fr").first();
-            Element forwardedForwardInfo = cardCommentAct.getElementsByTag("li").first();
-            forwardedActInfo = extractActInfo(forwardedForwardInfo);
-            forwardedBlog = new ForwardedBlogDto(forwardedBloggerInfo,
-                    forwardedBlogText, forwardedBlogPublishInfo, forwardedActInfo);
+            if (forwardedBloggerInfo != null) {
+                forwardedBlogText = extractBlogText(cardComment);
+                forwardedBlogPublishInfo = extractPublishInfo(cardComment);
+                Element cardCommentAct = cardComment.getElementsByClass("act s-fr").first();
+                Element forwardedForwardInfo = cardCommentAct.getElementsByTag("li").first();
+                forwardedActInfo = extractActInfo(forwardedForwardInfo);
+                forwardedBlog = new ForwardedBlogDto(forwardedBloggerInfo,
+                        forwardedBlogText, forwardedBlogPublishInfo, forwardedActInfo);
+            }
         }
         // 构建微博实体
         return new BlogDto(bloggerInfo, blogText, blogPublishInfo,
@@ -278,6 +279,9 @@ public class OneHourCrawlerTask implements Runnable {
     private BloggerInfoDto extractBloggerInfo(Element bloggerInfo) {
         Element identityInfo = bloggerInfo.getElementsByClass("name").first();
         String href = identityInfo.attr("href");
+        if (StringUtils.isEmpty(href)) {    // 作者设置了访问权限不允许其他人查看
+            return null;
+        }
         String bloggerHomePage = "https:" + href;
         String bloggerId = "";
         Pattern pattern = Pattern.compile("(\\d{10})");
