@@ -10,7 +10,6 @@ import com.kevin.cookie.dto.TCWDto;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,12 +31,19 @@ public class WeiboCookieFetcher {
 
     private static final String VISITOR_URL = "https://passport.weibo.com/visitor/visitor?a=incarnate";
 
-    private SPDto getCookies() {
+    public static Map<String, String> getCookies() {
         String time = System.currentTimeMillis() + "";
-        time
+        time = time.substring(0, 10) + "." + time.substring(10, time.length());
+        String passportUrl = PASSPORT_URL + time;
+        TCWDto tcw = getTCW(passportUrl);
+        SPDto sp = getSubAndSubP(tcw, passportUrl);
+        Map<String, String> cookies = new HashMap<>();
+        cookies.put("SUB", sp.getSub());
+        cookies.put("SUBP", sp.getSubp());
+        return cookies;
     }
 
-    private TCWDto getTCW(String passportUrl) {
+    private static TCWDto getTCW(String passportUrl) {
         Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeaders.ACCEPT, "*/*");
         headers.put(HttpHeaders.ORIGIN, "https://passport.weibo.com");
@@ -68,7 +74,7 @@ public class WeiboCookieFetcher {
         return null;
     }
 
-    private SPDto getSubAndSubP(TCWDto tcw, String passportUrl) {
+    private static SPDto getSubAndSubP(TCWDto tcw, String passportUrl) {
         if (tcw == null) {
             return null;
         }
@@ -82,7 +88,7 @@ public class WeiboCookieFetcher {
         Map<String, String> headers = Maps.newHashMap();
         headers.put(HttpHeaders.ACCEPT, "*/*");
         headers.put(HttpHeaders.HOST, "passport.weibo.com");
-        headers.put(HttpHeaders.COOKIE, "tid=" + tcw.getTid() + "__0" + tcw.getConfidence());
+        headers.put(HttpHeaders.COOKIE, "tid=" + tcw.getTid() + "__" + tcw.getConfidence());
         headers.put(HttpHeaders.REFERER, passportUrl);
 
         String resp = HttpUtil.get(url, headers);
@@ -95,5 +101,10 @@ public class WeiboCookieFetcher {
             return new SPDto(sub, subp);
         }
         return null;
+    }
+
+    public static void main(String[] args) {
+        Map<String, String> map = getCookies();
+        System.out.println(map);
     }
 }

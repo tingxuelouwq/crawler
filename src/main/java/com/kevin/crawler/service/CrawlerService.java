@@ -17,5 +17,5 @@ public interface CrawlerService {
     void weiboCrawl(String keywords,
                     LocalDateTime startDateTime,
                     LocalDateTime endDateTime,
-                    String sheetPath) throws InterruptedException, BizException;
+                    String sheetPath) throws BizException, InterruptedException;
 }

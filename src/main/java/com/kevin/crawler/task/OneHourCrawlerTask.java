@@ -3,6 +3,7 @@ package com.kevin.crawler.task;
 import com.kevin.common.util.DateTimeUtil;
 import com.kevin.crawler.dto.*;
 import com.kevin.crawler.exception.BizException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.jsoup.Jsoup;
@@ -13,6 +14,8 @@ import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -30,6 +33,7 @@ import static com.kevin.crawler.constant.BizStatusCode.bizStatusCodeMap;
  * @版本：1.0<br/>
  * @描述：一小时爬虫任务<br/>
  */
+@Slf4j
 public class OneHourCrawlerTask implements Runnable {
 
     private final String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36";
@@ -54,16 +58,11 @@ public class OneHourCrawlerTask implements Runnable {
 
     @Override
     public void run() {
-        try {
-            crawl(keywords, start, end, sheet, rowNum);
-        } catch (BizException e) {
-            e.printStackTrace();
-        } finally {
-            latch.countDown();
-        }
+        crawl(keywords, start, end, sheet, rowNum);
+        latch.countDown();
     }
 
-    public void crawl(String keywords, LocalDateTime start, LocalDateTime end, Sheet sheet, AtomicInteger rowNum) throws BizException {
+    public void crawl(String keywords, LocalDateTime start, LocalDateTime end, Sheet sheet, AtomicInteger rowNum) {
         int pageNum = 1;
         int totalPageNum = Integer.MAX_VALUE;
         while (pageNum <= totalPageNum) {
@@ -77,9 +76,10 @@ public class OneHourCrawlerTask implements Runnable {
             String url = urlBuilder.toString();
             Document doc;
             try {
-                doc = Jsoup.connect(url).userAgent(userAgent).timeout(20000).get();
+                doc = Jsoup.connect(url).userAgent(userAgent).timeout(60000).get();
             } catch (IOException e) {
-                throw new BizException(e, READ_OR_CONNECT_ERROR, bizStatusCodeMap.get(READ_OR_CONNECT_ERROR));
+                log.error(bizStatusCodeMap.get(READ_OR_CONNECT_ERROR), e);
+                continue;
             }
             Element feedList = doc.getElementById("pl_feedlist_index");
             Element noResultCard = feedList.getElementsByClass("card-no-result").first();

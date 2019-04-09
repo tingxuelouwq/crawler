@@ -33,7 +33,7 @@ public class CrawlerServiceImpl implements CrawlerService {
     public void weiboCrawl(String keywords,
                            LocalDateTime startDateTime,
                            LocalDateTime endDateTime,
-                           String sheetPath) throws InterruptedException, BizException {
+                           String sheetPath) throws BizException, InterruptedException {
         final Workbook workbook = new XSSFWorkbook();
         final Sheet sheet = workbook.createSheet();
         final String title = startDateTime + "~" + endDateTime + " [" + keywords + "]";

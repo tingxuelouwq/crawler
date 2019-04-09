@@ -1,10 +1,16 @@
 package com.kevin.crawler;
 
+import com.kevin.common.util.StringUtil;
+import com.kevin.cookie.fetcher.WeiboCookieFetcher;
 import com.kevin.crawler.exception.BizException;
 import com.kevin.crawler.task.OneHourCrawlerTask;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,11 +23,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.kevin.crawler.constant.BizStatusCode.*;
 
@@ -189,5 +199,85 @@ public class CrawlerApplicationTests {
             headCell.setCellStyle(headStyle);
             headCell.setCellValue(heads[i]);
         }
+    }
+
+    @Test
+    public void markup() throws IOException {
+        String filepath = "C:\\Users\\king\\Desktop\\test.xlsx";
+        String forwardReg = "<span><em class=\\\\\\\"W_ficon ficon_forward S_ficon\\\\\\\">&#xe607;<\\\\/em><em>\\s*(\\d+)\\s*<\\\\/em>";
+        String commentReg = "<span><em class=\\\\\\\"W_ficon ficon_repeat S_ficon\\\\\\\">&#xe608;<\\\\/em><em>\\s*(\\d+)\\s*<\\\\/em>";
+        String likeReg = "<span node-type=\\\\\\\"like_status\\\\\\\" class=\\\\\\\"\\\\\\\"><em class=\\\\\\\"W_ficon ficon_praised S_txt2\\\\\\\">ñ<\\\\/em><em>\\s*(\\d+)\\s*<\\\\/em>";
+        Workbook workbook = new XSSFWorkbook(filepath);
+        Sheet sheet = workbook.getSheetAt(0);
+        int totalRowNum = sheet.getLastRowNum();
+        int currentRowNum = 2;
+        for (; currentRowNum <= totalRowNum; currentRowNum++) {
+            Row row = sheet.getRow(currentRowNum);
+            String blogLink = row.getCell(5).getStringCellValue();
+            String forwardBlogLink = row.getCell(15).getStringCellValue();
+            Document doc = Jsoup.connect(blogLink).get();
+            String html = doc.html();
+
+            String forwardNum = parse(html, forwardReg, 1);
+            String commentNum = parse(html, commentReg, 1);
+            String likeNum = parse(html, likeReg, 1);
+            row.getCell(7).setCellValue(forwardNum);
+            row.getCell(8).setCellValue(commentNum);
+            row.getCell(9).setCellValue(likeNum);
+
+            if (StringUtil.isNotEmpty(forwardBlogLink)) {
+                forwardNum = parse(html, forwardReg, 2);
+                commentNum = parse(html, commentReg, 2);
+                likeNum = parse(html, likeReg, 2);
+                row.getCell(17).setCellValue(forwardNum);
+                row.getCell(18).setCellValue(commentNum);
+                row.getCell(19).setCellValue(likeNum);
+            }
+
+            System.out.println(currentRowNum);
+        }
+    }
+
+    private String extractActInfo(Element options, String attrName, String attrValue) {
+        Element act = options.getElementsByAttributeValue(attrName, attrValue).first();
+        String actNum = act.getElementsByTag("em").last().text().trim();
+        try {
+            Integer.valueOf(actNum);
+        } catch (NumberFormatException e) {
+            actNum = "0";
+        }
+        return actNum;
+    }
+
+    private String extractForwardInfo(Element forwardBlog, String className) {
+        String actNum = forwardBlog.getElementsByClass(className).first().nextElementSibling().text().trim();
+        try {
+            Integer.valueOf(actNum);
+        } catch (NumberFormatException e) {
+            actNum = "0";
+        }
+        return actNum;
+    }
+
+    public String parse(String input, String regex, int count) {
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+        for (int i = 0; i < count - 1; i++) {
+            matcher.find();
+        }
+        matcher.find();
+        String result = matcher.group(1);
+        return StringUtil.isEmpty(result) ? "0" : result;
+    }
+
+    @Test
+    public void test() {
+        String forwardReg = "<span><em class=\\\\\\\"W_ficon ficon_forward S_ficon\\\\\\\">&#xe607;<\\\\/em><em>\\s*(\\d+)\\s*<\\\\/em>";
+        String commentReg = "<span><em class=\\\\\\\"W_ficon ficon_repeat S_ficon\\\\\\\">&#xe608;<\\\\/em><em>\\s*(\\d+)\\s*<\\\\/em>";
+        String likeReg = "<span node-type=\\\\\\\"like_status\\\\\\\" class=\\\\\\\"\\\\\\\"><em class=\\\\\\\"W_ficon ficon_praised S_txt2\\\\\\\">ñ<\\\\/em><em>\\s*(\\d+)\\s*<\\\\/em>";
+
+        String input = "<span node-type=\\\"like_status\\\" class=\\\"\\\"><em class=\\\"W_ficon ficon_praised S_txt2\\\">ñ<\\/em><em>  1233434  <\\/em>" +
+                "<span node-type=\\\"like_status\\\" class=\\\"\\\"><em class=\\\"W_ficon ficon_praised S_txt2\\\">ñ<\\/em><em>  23  <\\/em>";
+        System.out.println(parse(input, likeReg, 2));
     }
 }

@@ -3,6 +3,7 @@
     <contextName>logback</contextName>
 
     <property name="log.path" value="./logs"/>
+    <property name="project.artifactId" value="crawler"/>
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
