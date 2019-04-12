@@ -37,7 +37,7 @@ public class BizStatusCode extends BaseStatusCode {
         map.put(SUCCESS, "成功");
         map.put(DATE_FORMAT_ERROR, "日期格式有误，正确格式样例: 2019-01-01-0");
         map.put(READ_OR_CONNECT_ERROR, "与微博链接失败或读取微博数据超时，请检查网络连接");
-        map.put(CRAWL_TASK_FAILUER, "爬虫任务失败");
+        map.put(CRAWL_TASK_FAILUER, "爬虫任务失败，可能是被微博封杀，请稍后再试");
         map.put(SAVE_TO_DISK_FAILED, "存盘失败，请检查是否已经打开该文件");
         map.put(OUTPUTSTREAM_CLOSED_ERROR, "流关闭错误");
         bizStatusCodeMap = Collections.unmodifiableMap(map);

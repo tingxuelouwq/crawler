@@ -15,7 +15,6 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.kevin.common.util.DateTimeUtil.DateTimeFormat.LONG_DATE_TIME_PATTERN_WITH_LINE_TO_HOUR;
-import static com.kevin.crawler.constant.BizStatusCode.READ_OR_CONNECT_ERROR;
-import static com.kevin.crawler.constant.BizStatusCode.bizStatusCodeMap;
+import static com.kevin.crawler.constant.BizStatusCode.*;
 import static com.kevin.crawler.util.CrawlerUtil.*;
 
 /**
@@ -47,7 +45,7 @@ public class CrawlerServiceImpl implements CrawlerService {
     public void weiboCrawl(String keywords,
                            LocalDateTime startDateTime,
                            LocalDateTime endDateTime,
-                           String sheetPath) throws BizException, InterruptedException {
+                           String sheetPath) throws BizException {
         final Workbook workbook = new XSSFWorkbook();
         final Sheet sheet = workbook.createSheet();
         final String title = startDateTime + "~" + endDateTime + " [" + keywords + "]";
@@ -74,7 +72,7 @@ public class CrawlerServiceImpl implements CrawlerService {
     }
 
     private List<BlogDto> crawl(String keywords, LocalDateTime start, LocalDateTime end)
-            throws InterruptedException {
+            throws BizException {
         List<BlogDto> result = new ArrayList<>();
         int pageNum = 1;
         int totalPageNum = Integer.MAX_VALUE;
@@ -87,35 +85,35 @@ public class CrawlerServiceImpl implements CrawlerService {
                     .append(DateTimeUtil.formatDateTime(end, LONG_DATE_TIME_PATTERN_WITH_LINE_TO_HOUR))
                     .append("&Refer=g&page=").append(pageNum);
             String url = urlBuilder.toString();
-            Document doc;
+            Document doc = null;
             try {
                 doc = Jsoup.connect(url).userAgent(userAgent).timeout(20000).get();
-            } catch (IOException e) {
-                log.error(bizStatusCodeMap.get(READ_OR_CONNECT_ERROR), e);
-                continue;
-            }
-            Element feedList = doc.getElementById("pl_feedlist_index");
-            Element noResultCard = feedList.getElementsByClass("card-no-result").first();
-            if (noResultCard != null) { // // 判断是否有结果
-                break;
-            }
-            if (totalPageNum == Integer.MAX_VALUE) {    // 第一次访问获取总页数
-                Element pageCard = feedList.getElementsByClass("s-scroll").first();
-                if (pageCard == null) {
-                    totalPageNum = Integer.MIN_VALUE;
-                } else {
-                    String pageInfo = pageCard.getElementsByTag("li").last()
-                            .getElementsByTag("a").text();
-                    totalPageNum = Integer.parseInt(pageInfo.substring(pageInfo.indexOf("第") + 1, pageInfo.indexOf("页")));
+                Element feedList = doc.getElementById("pl_feedlist_index");
+                Elements noResultCard = feedList.getElementsByClass("card-no-result");
+                if (noResultCard != null) { // // 判断是否有结果
+                    break;
                 }
+                if (totalPageNum == Integer.MAX_VALUE) {    // 第一次访问获取总页数
+                    Element pageCard = feedList.getElementsByClass("s-scroll").first();
+                    if (pageCard == null) {
+                        totalPageNum = Integer.MIN_VALUE;
+                    } else {
+                        String pageInfo = pageCard.getElementsByTag("li").last()
+                                .getElementsByTag("a").text();
+                        totalPageNum = Integer.parseInt(pageInfo.substring(pageInfo.indexOf("第") + 1, pageInfo.indexOf("页")));
+                    }
+                }
+                Elements cards = feedList.getElementsByAttribute("mid");
+                for (Element card : cards) {
+                    BlogDto blog = extractBlog(card);
+                    result.add(blog);
+                }
+                pageNum++;
+                TimeUnit.SECONDS.sleep((long) (Math.random() * 30));
+            } catch (Exception e) {
+                log.error("url: " + url + ", doc: " + doc.html(), e);
+                throw new BizException(CRAWL_TASK_FAILUER, bizStatusCodeMap.get(CRAWL_TASK_FAILUER));
             }
-            Elements cards = feedList.getElementsByAttribute("mid");
-            for (Element card : cards) {
-                BlogDto blog = extractBlog(card);
-                result.add(blog);
-            }
-            pageNum++;
-            TimeUnit.SECONDS.sleep((long) (Math.random() * 10));
         }
         return result;
     }
