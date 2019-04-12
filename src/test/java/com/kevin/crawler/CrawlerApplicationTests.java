@@ -1,6 +1,5 @@
 package com.kevin.crawler;
 
-import com.kevin.common.util.StringUtil;
 import com.kevin.cookie.fetcher.WeiboCookieFetcher;
 import com.kevin.crawler.exception.BizException;
 import com.kevin.crawler.task.OneHourCrawlerTask;
@@ -10,7 +9,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,7 +21,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -202,11 +199,13 @@ public class CrawlerApplicationTests {
     }
 
     @Test
-    public void markup() throws IOException {
-        String filepath = "C:\\Users\\king\\Desktop\\test.xlsx";
+    public void markup() throws IOException, BizException {
+        String filepath = "C:\\Users\\kevin\\Desktop\\泉港碳九事件数据待补采样本2019.4.10.xlsx";
+        String outputPath = "C:\\Users\\kevin\\Desktop\\[补充完毕]泉港碳九事件数据待补采样本2019.4.10.xlsx";
         String forwardReg = "<span><em class=\\\\\\\"W_ficon ficon_forward S_ficon\\\\\\\">&#xe607;<\\\\/em><em>\\s*(\\d+)\\s*<\\\\/em>";
         String commentReg = "<span><em class=\\\\\\\"W_ficon ficon_repeat S_ficon\\\\\\\">&#xe608;<\\\\/em><em>\\s*(\\d+)\\s*<\\\\/em>";
         String likeReg = "<span node-type=\\\\\\\"like_status\\\\\\\" class=\\\\\\\"\\\\\\\"><em class=\\\\\\\"W_ficon ficon_praised S_txt2\\\\\\\">ñ<\\\\/em><em>\\s*(\\d+)\\s*<\\\\/em>";
+        Map<String, String> cookies = WeiboCookieFetcher.getCookies();
         Workbook workbook = new XSSFWorkbook(filepath);
         Sheet sheet = workbook.getSheetAt(0);
         int totalRowNum = sheet.getLastRowNum();
@@ -214,28 +213,36 @@ public class CrawlerApplicationTests {
         for (; currentRowNum <= totalRowNum; currentRowNum++) {
             Row row = sheet.getRow(currentRowNum);
             String blogLink = row.getCell(5).getStringCellValue();
-            String forwardBlogLink = row.getCell(15).getStringCellValue();
-            Document doc = Jsoup.connect(blogLink).get();
+            Cell forwardCell = row.getCell(15);
+            Document doc = Jsoup.connect(blogLink).cookies(cookies).get();
             String html = doc.html();
 
-            String forwardNum = parse(html, forwardReg, 1);
-            String commentNum = parse(html, commentReg, 1);
-            String likeNum = parse(html, likeReg, 1);
-            row.getCell(7).setCellValue(forwardNum);
-            row.getCell(8).setCellValue(commentNum);
-            row.getCell(9).setCellValue(likeNum);
+            if (forwardCell == null) {
+                String forwardNum = parse(html, forwardReg, 1);
+                String commentNum = parse(html, commentReg, 1);
+                String likeNum = parse(html, likeReg, 1);
+                row.getCell(7).setCellValue(forwardNum);
+                row.getCell(8).setCellValue(commentNum);
+                row.getCell(9).setCellValue(likeNum);
+            } else {
+                String forwardForwardNum = parse(html, forwardReg, 1);
+                String forwardCommentNum = parse(html, commentReg, 1);
+                String forwardLikeNum = parse(html, likeReg, 1);
+                row.getCell(17).setCellValue(forwardForwardNum);
+                row.getCell(18).setCellValue(forwardCommentNum);
+                row.getCell(19).setCellValue(forwardLikeNum);
 
-            if (StringUtil.isNotEmpty(forwardBlogLink)) {
-                forwardNum = parse(html, forwardReg, 2);
-                commentNum = parse(html, commentReg, 2);
-                likeNum = parse(html, likeReg, 2);
-                row.getCell(17).setCellValue(forwardNum);
-                row.getCell(18).setCellValue(commentNum);
-                row.getCell(19).setCellValue(likeNum);
+                String forwardNum = parse(html, forwardReg, 2);
+                String commentNum = parse(html, commentReg, 2);
+                String likeNum = parse(html, likeReg, 2);
+                row.getCell(7).setCellValue(forwardNum);
+                row.getCell(8).setCellValue(commentNum);
+                row.getCell(9).setCellValue(likeNum);
             }
 
             System.out.println(currentRowNum);
         }
+        writeToExcel(workbook, outputPath);
     }
 
     private String extractActInfo(Element options, String attrName, String attrValue) {
@@ -266,8 +273,11 @@ public class CrawlerApplicationTests {
             matcher.find();
         }
         matcher.find();
-        String result = matcher.group(1);
-        return StringUtil.isEmpty(result) ? "0" : result;
+        try {
+            return matcher.group(1);
+        } catch (IllegalStateException e) {
+            return "0";
+        }
     }
 
     @Test
@@ -278,6 +288,6 @@ public class CrawlerApplicationTests {
 
         String input = "<span node-type=\\\"like_status\\\" class=\\\"\\\"><em class=\\\"W_ficon ficon_praised S_txt2\\\">ñ<\\/em><em>  1233434  <\\/em>" +
                 "<span node-type=\\\"like_status\\\" class=\\\"\\\"><em class=\\\"W_ficon ficon_praised S_txt2\\\">ñ<\\/em><em>  23  <\\/em>";
-        System.out.println(parse(input, likeReg, 2));
+        System.out.println(parse(input, likeReg, 1));
     }
 }
