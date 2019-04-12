@@ -1,14 +1,20 @@
 package com.kevin.crawler.util;
 
+import com.kevin.common.util.DateTimeUtil;
+import com.kevin.crawler.dto.BlogDto;
+import com.kevin.crawler.dto.ForwardedBlogDto;
 import com.kevin.crawler.exception.BizException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.springframework.util.CollectionUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.kevin.crawler.constant.BizStatusCode.*;
 import static com.kevin.crawler.constant.BizStatusCode.OUTPUTSTREAM_CLOSED_ERROR;
@@ -100,6 +106,46 @@ public class CrawlerUtil {
             Cell headCell = headRow.createCell(i);
             headCell.setCellStyle(headStyle);
             headCell.setCellValue(heads[i]);
+        }
+    }
+
+    /**
+     * 填充表格
+     * @param sheet
+     * @param rowNum
+     * @param blogs
+     */
+    public static void wrapperBody(Sheet sheet, AtomicInteger rowNum, List<BlogDto> blogs) {
+        if (CollectionUtils.isEmpty(blogs)) {
+            return;
+        }
+        for (BlogDto blog : blogs) {
+            System.out.println(rowNum);
+            Row row = sheet.createRow(rowNum.getAndIncrement());
+            row.createCell(0).setCellValue(blog.getBloggerInfo().getId());
+            row.createCell(1).setCellValue(blog.getBloggerInfo().getNickName());
+            row.createCell(2).setCellValue(blog.getBloggerInfo().getHomePage());
+            row.createCell(3).setCellValue(blog.getBloggerInfo().getAuthInfo());
+            row.createCell(4).setCellValue(blog.getBlogText().getImgText());
+            row.createCell(5).setCellValue(blog.getBlogPublishInfo().getBlogLink());
+            row.createCell(6).setCellValue(DateTimeUtil.formatDateTime(blog.getBlogPublishInfo().getPublishDateTime()));
+            row.createCell(7).setCellValue(blog.getActInfo().getForwardNum());
+            row.createCell(8).setCellValue(blog.getActInfo().getCommentNum());
+            row.createCell(9).setCellValue(blog.getActInfo().getLikeNum());
+
+            ForwardedBlogDto forwardedBlog = blog.getForwardedBlog();
+            if (forwardedBlog != null) {
+                row.createCell(10).setCellValue(forwardedBlog.getBloggerInfo().getId());
+                row.createCell(11).setCellValue(forwardedBlog.getBloggerInfo().getNickName());
+                row.createCell(12).setCellValue(forwardedBlog.getBloggerInfo().getHomePage());
+                row.createCell(13).setCellValue(forwardedBlog.getBloggerInfo().getAuthInfo());
+                row.createCell(14).setCellValue(forwardedBlog.getBlogText().getImgText());
+                row.createCell(15).setCellValue(forwardedBlog.getBlogPublishInfo().getBlogLink());
+                row.createCell(16).setCellValue(DateTimeUtil.formatDateTime(forwardedBlog.getBlogPublishInfo().getPublishDateTime()));
+                row.createCell(17).setCellValue(forwardedBlog.getActInfo().getForwardNum());
+                row.createCell(18).setCellValue(forwardedBlog.getActInfo().getCommentNum());
+                row.createCell(19).setCellValue(forwardedBlog.getActInfo().getLikeNum());
+            }
         }
     }
 
