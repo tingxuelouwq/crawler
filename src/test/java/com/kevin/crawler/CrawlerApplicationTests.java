@@ -1,5 +1,6 @@
 package com.kevin.crawler;
 
+import com.kevin.common.util.StringUtil;
 import com.kevin.cookie.fetcher.WeiboCookieFetcher;
 import com.kevin.crawler.exception.BizException;
 import com.kevin.crawler.service.CrawlerService;
@@ -71,7 +72,8 @@ public class CrawlerApplicationTests {
             Document doc = Jsoup.connect(blogLink).cookies(cookies).get();
             String html = doc.html();
 
-            if (forwardCell == null) {
+            if (forwardCell == null ||
+                    StringUtil.isEmpty(forwardCell.getStringCellValue())) {
                 String forwardNum = parse(html, forwardReg, 1);
                 String commentNum = parse(html, commentReg, 1);
                 String likeNum = parse(html, likeReg, 1);
